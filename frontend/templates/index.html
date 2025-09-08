@@ -1,0 +1,123 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>AI Interview Permissions</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='index.css') }}">
+</head>
+<body>
+  <div class="container">
+    <h1>Welcome to Interview, <span id="username"></span></h1>
+
+    <div class="role-section">
+      <label for="roleSelect">Select your role:</label>
+      <select id="roleSelect" onchange="saveUserRole()">
+        <option value="">Select Role</option>
+        <option value="developer">Developer</option>
+        <option value="designer">Designer</option>
+        <option value="analyst">Analyst</option>
+        <option value="tester">Tester</option>
+        <option value="manager">Manager</option>
+      </select>
+    </div>
+
+    <button id="startBtn" class="start-btn" disabled onclick="startInterview()">Start Interview</button>
+
+    <div id="status" style="margin-top:10px;"></div>
+
+    <div id="completedMsg" style="display:none; margin-top:20px;">
+      <h2>Interview Already Completed</h2>
+      <a href="{{ url_for('logout') }}" class="logout-btn">Logout</a>
+    </div>
+  </div>
+
+  <script>
+    let roleSelected = false;
+
+    async function loadUserData() {
+      try {
+        const st = await fetch("/interview_status");
+        if (st.ok) {
+          const s = await st.json();
+          if (s.completed) {
+            document.getElementById("completedMsg").style.display = "block";
+            document.getElementById("startBtn").style.display = "none";
+          }
+        }
+
+        const res = await fetch("/api/user");
+        if (!res.ok) throw new Error("Not logged in");
+        const data = await res.json();
+        document.getElementById("username").innerText = data.username || "Guest";
+        if (data.role) {
+          document.getElementById("roleSelect").value = data.role;
+          roleSelected = true;
+        }
+        checkPermissions();
+      } catch (err) {
+        console.error(err);
+        window.location.href = "/signin";
+      }
+    }
+
+    function saveUserRole() {
+      const role = document.getElementById('roleSelect').value;
+      roleSelected = role !== "";
+      if (!roleSelected) {
+        updateStatus("Please select a role.");
+        checkPermissions();
+        return;
+      }
+
+      fetch('/set_role', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ role: role })
+      })
+      .then(res => res.json())
+      .then(data => {
+        updateStatus("✅ Role saved: " + role);
+        checkPermissions();
+      })
+      .catch(err => {
+        console.error(err);
+        updateStatus("❌ Failed to save role.");
+      });
+    }
+
+    function checkPermissions() {
+      const btn = document.getElementById("startBtn");
+      if (roleSelected) {
+        btn.disabled = false;
+        updateStatus("🎯 All set! You can start the interview.");
+      } else {
+        btn.disabled = true;
+      }
+    }
+
+    function updateStatus(msg) {
+      document.getElementById("status").innerText = msg;
+    }
+
+    async function startInterview() {
+      try {
+        const r = await fetch('/start_recording', { method: 'POST' });
+        if (!r.ok) {
+          const err = await r.json().catch(() => ({}));
+          updateStatus("❌ Unable to start recording: " + (err.error || r.statusText));
+          return;
+        }
+      } catch (e) {
+        updateStatus("❌ Unable to start recording: " + e.message);
+        return;
+      }
+
+      const role = document.getElementById("roleSelect").value;
+      sessionStorage.setItem("selectedRole", role);
+      window.location.href = "/interview";
+    }
+
+    loadUserData();
+  </script>
+</body>
+</html>

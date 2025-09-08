@@ -1,0 +1,178 @@
+<!-- <!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Sign Up</title>
+  <link rel="stylesheet" href="/static/auth.css">
+</head>
+<body>
+  <div class="container">
+    <div class="left-panel">
+      <h1>Welcome!</h1>
+      <p>Create your account and join our platform today.</p>
+    </div>
+
+    <div class="right-panel">
+      <div class="form-card">
+        <h2>Sign Up</h2>
+        <form id="signupForm" method="POST" action="/signup">
+          <div class="form-group">
+            <label for="username">Username</label>
+            <input type="text" id="username" name="username" required>
+          </div>
+
+          <div class="form-group">
+            <label for="email">Email</label>
+            <input type="email" id="email" name="email" required>
+          </div>
+
+          <div class="form-group">
+            <label for="password">Password</label>
+            <input type="password" id="password" name="password" required>
+          </div>
+
+          <div class="form-group">
+            <label for="confirmPassword">Confirm Password</label>
+            <input type="password" id="confirmPassword" name="confirmPassword" required>
+          </div>
+
+          <button type="submit" class="btn">Sign Up</button>
+        </form>
+        <p class="switch-page">Already have an account? <a href="/signin">Sign In</a></p>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    document.getElementById("signupForm").addEventListener("submit", function(e) {
+      const password = document.getElementById("password").value;
+      const confirmPassword = document.getElementById("confirmPassword").value;
+
+      if (password !== confirmPassword) {
+        e.preventDefault();
+        alert("Passwords do not match!");
+      }
+    });
+  </script>
+</body>
+</html> -->
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Sign Up</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='auth.css') }}">
+</head>
+<body>
+  <div class="container">
+    <div class="left-panel">
+      <h1>Welcome!</h1>
+      <p>Create your account and join our platform today.</p>
+    </div>
+
+    <div class="right-panel">
+      <div class="form-card">
+        <h2>Sign Up</h2>
+        <form id="signupForm">
+          <div class="form-group">
+            <label for="username">Username</label>
+            <input type="text" id="username" name="username" required>
+          </div>
+
+          <div class="form-group">
+            <label for="email">Email</label>
+            <input type="email" id="email" name="email" required>
+          </div>
+
+          <div class="form-group">
+            <label for="password">Password</label>
+            <input type="password" id="password" name="password" required>
+            <p id="passwordRequirements" class="error-msg"></p>
+          </div>
+
+          <div class="form-group">
+            <label for="confirmPassword">Confirm Password</label>
+            <input type="password" id="confirmPassword" name="confirmPassword" required>
+            <p id="confirmPasswordError" class="error-msg"></p>
+          </div>
+
+          <button type="submit" class="btn">Sign Up</button>
+          <p id="signupError" class="error-msg"></p>
+        </form>
+        <p class="switch-page">Already have an account? <a href="/signin">Sign In</a></p>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    const signupForm = document.getElementById("signupForm");
+    const passwordInput = document.getElementById("password");
+    const confirmInput = document.getElementById("confirmPassword");
+    const requirements = document.getElementById("passwordRequirements");
+    const confirmError = document.getElementById("confirmPasswordError");
+    const signupError = document.getElementById("signupError");
+
+    function validatePassword(password) {
+      const regex = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&]).{8,}$/;
+      return regex.test(password);
+    }
+
+    passwordInput.addEventListener("input", () => {
+      if (!validatePassword(passwordInput.value)) {
+        requirements.textContent = "Password must include: 8+ chars, uppercase, lowercase, number, special character.";
+      } else {
+        requirements.textContent = "";
+      }
+    });
+
+    confirmInput.addEventListener("input", () => {
+      if (confirmInput.value !== passwordInput.value) {
+        confirmError.textContent = "Passwords do not match!";
+      } else {
+        confirmError.textContent = "";
+      }
+    });
+
+    signupForm.addEventListener("submit", async (e) => {
+      e.preventDefault();
+      signupError.textContent = "";
+
+      const username = signupForm.username.value.trim();
+      const email = signupForm.email.value.trim();
+      const password = signupForm.password.value;
+      const confirmPassword = signupForm.confirmPassword.value;
+
+      if (!validatePassword(password)) {
+        signupError.textContent = "Invalid password format.";
+        return;
+      }
+
+      if (password !== confirmPassword) {
+        signupError.textContent = "Passwords do not match!";
+        return;
+      }
+
+      try {
+        const res = await fetch("/signup", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ username, email, password })
+        });
+
+        const data = await res.json();
+
+        if (res.ok) {
+          window.location.href = "/signin";
+        } else {
+          signupError.textContent = data.error || "Signup failed.";
+        }
+      } catch (err) {
+        signupError.textContent = "Error: " + err.message;
+      }
+    });
+  </script>
+</body>
+</html>

@@ -1,0 +1,201 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8" />
+    <title>AI Interview</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='interview.css') }}">
+</head>
+<body>
+    <div class="container" id="main-container" style="display:none;">
+        <div class="question-number" id="question-number"></div>
+        <div class="timer" id="timer"></div>
+        <div id="question-box" class="question-box">
+            <p id="question-text"></p>
+        </div>
+        <div class="button-row" id="button-row">
+            <button id="skip-btn" class="skip-btn">Skip</button>
+            <button id="next-btn" class="next-btn">Next</button>
+            <button id="submit-btn" class="next-btn" style="display:none; margin:0 auto;">Submit</button>
+        </div>
+    </div>
+
+    <div id="completed-msg" style="display:none; text-align:center;">
+        <h2>Interview Completed</h2>
+        <p>Thank you for completing the interview!</p>
+        <p>Your video has been recorded and saved.</p>
+        <a href="{{ url_for('logout') }}" class="logout-btn">Logout</a>
+    </div>
+
+    <div class="preview-wrapper">
+        <img id="preview" src="/video_feed" alt="Live preview" />
+    </div>
+
+    <script>
+        let questions = [];
+        let currentQuestion = 0;
+        let timerInterval;
+
+        const timerDisplay = document.getElementById("timer");
+        const nextBtn = document.getElementById("next-btn");
+        const skipBtn = document.getElementById("skip-btn");
+        const submitBtn = document.getElementById("submit-btn");
+        const completedMsg = document.getElementById("completed-msg");
+        const questionNumberDisplay = document.getElementById("question-number");
+
+        async function initInterviewPage() {
+            try {
+                const statusRes = await fetch("/interview_status");
+                const statusData = await statusRes.json();
+                if (statusData.completed) {
+                    showCompleted();
+                    return;
+                }
+
+                const res = await fetch("/get_questions");
+                const data = await res.json();
+
+                if (data.questions && Array.isArray(data.questions) && data.questions.length > 0) {
+                    questions = data.questions;
+                    document.getElementById("main-container").style.display = "block";
+                    loadQuestion();
+                } else {
+                    alert("Failed to load questions.");
+                }
+            } catch (err) {
+                console.error(err);
+                alert("Error initializing interview.");
+            }
+        }
+
+        function showCompleted() {
+            document.getElementById("main-container").style.display = "none";
+             document.getElementById("preview-wrapper").style.display = "none";
+            completedMsg.style.display = "block";
+        }
+
+        function speak(text) {
+            const synth = window.speechSynthesis;
+            synth.cancel();
+            const utterance = new SpeechSynthesisUtterance(text);
+            utterance.lang = 'en-US';
+            synth.speak(utterance);
+        }
+
+        function loadQuestion() {
+            if (currentQuestion >= questions.length) {
+                submitInterview();
+                return;
+            }
+
+            const question = questions[currentQuestion];
+            document.getElementById("question-box").style.display = "block";
+            document.getElementById("question-text").textContent = question;
+            questionNumberDisplay.textContent = `Question ${currentQuestion + 1}`;
+            speak(question);
+            startTimer(120);
+
+            if (currentQuestion === questions.length - 1) {
+                nextBtn.style.display = "none";
+                skipBtn.style.display = "none";
+                submitBtn.style.display = "inline-block";
+            } else {
+                nextBtn.style.display = "inline-block";
+                skipBtn.style.display = "inline-block";
+                submitBtn.style.display = "none";
+            }
+        }
+
+        function startTimer(seconds) {
+            clearInterval(timerInterval);
+            updateTimer(seconds);
+
+            timerInterval = setInterval(() => {
+                seconds--;
+                updateTimer(seconds);
+                if (seconds <= 0) {
+                    clearInterval(timerInterval);
+                    currentQuestion++;
+                    loadQuestion();
+                }
+            }, 1000);
+        }
+
+        function updateTimer(seconds) {
+            const m = String(Math.floor(seconds / 60)).padStart(2, '0');
+            const s = String(seconds % 60).padStart(2, '0');
+            timerDisplay.textContent = `${m}:${s}`;
+        }
+
+        nextBtn.addEventListener("click", () => {
+            currentQuestion++;
+            loadQuestion();
+        });
+
+        skipBtn.addEventListener("click", () => {
+            currentQuestion++;
+            loadQuestion();
+        });
+
+        submitBtn.addEventListener("click", () => {
+            submitInterview();
+        });
+
+        async function submitInterview() {
+            clearInterval(timerInterval);
+            nextBtn.disabled = true;
+            skipBtn.disabled = true;
+            submitBtn.disabled = true;
+
+            try {
+                const resp = await fetch('/stop_recording', { method: 'POST' });
+                const out = await resp.json().catch(() => ({}));
+                if (resp.ok) {
+                    console.log("Recording saved successfully:", out.file);
+                } else {
+                    console.error("Recording merge failed:", out.error || resp.statusText);
+                }
+            } catch (e) {
+                console.error("Network error:", e);
+            }
+
+            showCompleted();
+        }
+        
+     let violationCount = 0;
+
+document.addEventListener("visibilitychange", async () => {
+    if (document.hidden) {
+      violationCount++;
+      alert("⚠️ Switching tabs is not allowed during the interview.");
+
+      try {
+        await fetch("/log_tab_switch", { method: "POST" });
+      } catch (err) {
+        console.error("Failed to log tab switch:", err);
+      }
+
+      if (violationCount >= 3) {
+        alert("❌ Interview terminated due to multiple tab switches.");
+        submitInterview();
+      }
+    }
+});
+
+window.onblur = async () => {
+    violationCount++;
+    alert("⚠️ You moved away from the interview window.");
+    try {
+        await fetch("/log_tab_switch", { method: "POST" });
+    } catch (err) {
+        console.error("Failed to log tab switch:", err);
+    }
+
+    if (violationCount >= 3) {
+        alert("❌ Interview terminated due to multiple tab switches.");
+        submitInterview();
+    }
+};
+        window.onload = initInterviewPage;
+    </script>
+</body>
+</html>

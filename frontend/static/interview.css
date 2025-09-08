@@ -1,0 +1,142 @@
+body {
+  margin: 0;
+  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+  background: linear-gradient(145deg, #fff7f0, #fffdf9);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  min-height: 100vh;
+  background-attachment: fixed;
+  position: relative;
+  overflow: hidden;
+}
+
+body::before, body::after {
+  content: '';
+  position: absolute;
+  width: 200px;
+  height: 200px;
+  background: radial-gradient(circle at center, #ff7a59, #ffb347);
+  border-radius: 50%;
+  opacity: 0.25;
+  z-index: 0;
+}
+body::before {
+  top: -50px;
+  left: -50px;
+}
+body::after {
+  bottom: -50px;
+  right: -50px;
+}
+
+.container {
+  background: white;
+  padding: 2rem;
+  border-radius: 12px;
+  box-shadow: 0 8px 25px rgba(0,0,0,0.08);
+  max-width: 500px;
+  width: 100%;
+  z-index: 1;
+  box-sizing: border-box;
+  text-align: center;
+  margin-bottom: 20px; 
+}
+
+.question-number {
+  font-size: 1.25rem;
+  font-weight: 700;
+  margin-bottom: 0.5rem;
+  color: #333;
+}
+
+.timer {
+  font-size: 1rem;
+  font-weight: 600;
+  color: #00c853; 
+  margin-bottom: 1.5rem;
+}
+
+.question-box {
+  font-size: 1.2rem;
+  margin-bottom: 2rem;
+  min-height: 80px;
+  color: #222;
+}
+
+button, .btn {
+  width: 45%;
+  background: linear-gradient(90deg, #00c853, #00e676);
+  color: white;
+  padding: 0.75rem;
+  border: none;
+  border-radius: 50px;
+  font-size: 1rem;
+  font-weight: 600;
+  cursor: pointer;
+  margin: 0 0.25rem;
+  transition: transform 0.2s ease;
+  box-sizing: border-box;
+}
+
+button:hover, .btn:hover {
+  transform: scale(1.02);
+}
+
+.skip-btn {
+  background: #ccc;
+  color: #333;
+  width: 45%;
+}
+
+.skip-btn:hover {
+  background: #b3b3b3;
+  transform: scale(1.02);
+}
+
+#submit-btn {
+  background: linear-gradient(90deg, #00c853, #00e676);
+  width: 100%;
+  margin-top: 1rem;
+}
+
+#completed-msg {
+  background: white;
+  padding: 2rem;
+  border-radius: 12px;
+  box-shadow: 0 8px 25px rgba(0,0,0,0.08);
+  max-width: 400px;
+  width: 100%;
+  color: #00c853;
+  font-weight: 700;
+  text-align: center;
+  z-index: 1;
+}
+
+.logout-btn {
+  display: inline-block;
+  margin-top: 20px;
+  padding: 10px 20px;
+  background-color: #ff4d4d;
+  color: white;
+  text-decoration: none;
+  border-radius: 5px;
+  font-weight: bold;
+  transition: background-color 0.3s ease;
+}
+
+.logout-btn:hover {
+  background-color: #ff1a1a;
+}
+
+.preview-wrapper {
+  text-align: center;
+  margin-left: 50px;
+}  
+
+#preview {
+  max-width: 320px;
+  border-radius: 12px;
+  box-shadow: 0 8px 25px rgba(0,0,0,0.08);
+  display: inline-block;
+}
